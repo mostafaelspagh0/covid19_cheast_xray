@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models, transforms
 
+
 CLASS_NAMES = ["NORMAL", "PNEUMONIA", "UNKNOWN", "TUBERCULOSIS"]
 MODEL_PATH = r"C:\Users\mostafa\Documents\GitHub\covid19_cheast_xray\Ai-model\model.pt"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,6 +45,7 @@ def predict(model, input_tensor):
     predicted_class = CLASS_NAMES[top_idx]
     probabilities = {CLASS_NAMES[i]: float(probs[i]) for i in range(len(CLASS_NAMES))}
     return predicted_class, probabilities
+
 
 app = Flask(__name__)
 
