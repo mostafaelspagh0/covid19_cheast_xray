@@ -69,14 +69,9 @@ jobs:
                 echo "Flask API service restarted."
               fi
               
-              if systemctl is-active --quiet streamlit-app.service 2>/dev/null; then
-                sudo systemctl restart streamlit-app.service
-                echo "Streamlit app service restarted."
-              fi
-              
               # If no systemd services, try killing and restarting processes
-              pkill -f "flask_app.py" || true
-              pkill -f "streamlit_app.py" || true
+              pkill -f "app.py" || true
+              pkill -f "gunicorn.*app" || true
               
               echo "⚠️  Manual process restart attempted. Please ensure services are properly configured."
             fi
