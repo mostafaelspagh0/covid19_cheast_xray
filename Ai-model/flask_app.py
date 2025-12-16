@@ -9,7 +9,7 @@ from torchvision import models, transforms
 
 
 CLASS_NAMES = ["NORMAL", "PNEUMONIA", "UNKNOWN", "TUBERCULOSIS"]
-MODEL_PATH = r"C:\Users\mostafa\Documents\GitHub\covid19_cheast_xray\Ai-model\model.pt"
+MODEL_PATH = os.getenv("MODEL_PATH", os.path.join(os.path.dirname(__file__), "model.pt"))
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def load_model(model_path):

@@ -1,0 +1,85 @@
+name: CI/CD Pipeline to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEPLOY_PATH: /home/${{ secrets.EC2_SSH_USERNAME }}/app/
+
+jobs:
+  ## 1. 📁 Deploy Code to EC2
+  deploy_code:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy Code to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_SSH_HOST }}
+          username: ${{ secrets.EC2_SSH_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: DEPLOY_PATH
+          script: |
+            echo "--- Deploying code to EC2 ---"
+            
+            cd $DEPLOY_PATH
+            
+            # Pull latest code from GitHub
+            echo "Pulling latest repository changes..."
+            git pull origin main || git pull origin master
+            
+            echo "✅ Code deployment completed."
+
+  ## 2. 🔄 Restart Application
+  restart_app:
+    needs: deploy_code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Restart Application on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.EC2_SSH_HOST }}
+          username: ${{ secrets.EC2_SSH_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: DEPLOY_PATH
+          script: |
+            echo "--- Restarting application ---"
+            
+            cd $DEPLOY_PATH
+            
+            # Check if restart script exists and execute it
+            if [ -f "./Ai-model/scripts/restart.sh" ]; then
+              chmod +x ./Ai-model/scripts/restart.sh
+              ./Ai-model/scripts/restart.sh
+            else
+              echo "⚠️  Restart script not found. Attempting manual restart..."
+              
+              # Fallback: Try to restart systemd services
+              if systemctl is-active --quiet flask-api.service 2>/dev/null; then
+                sudo systemctl restart flask-api.service
+                echo "Flask API service restarted."
+              fi
+              
+              if systemctl is-active --quiet streamlit-app.service 2>/dev/null; then
+                sudo systemctl restart streamlit-app.service
+                echo "Streamlit app service restarted."
+              fi
+              
+              # If no systemd services, try killing and restarting processes
+              pkill -f "flask_app.py" || true
+              pkill -f "streamlit_app.py" || true
+              
+              echo "⚠️  Manual process restart attempted. Please ensure services are properly configured."
+            fi
+            
+            echo "✅ Application restart completed."
+
