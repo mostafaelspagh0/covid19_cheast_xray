@@ -16,7 +16,6 @@ CLASS_NAMES = ["NORMAL", "PNEUMONIA", "UNKNOWN", "TUBERCULOSIS"]
 MODEL_PATH = os.getenv("MODEL_PATH", os.path.join(os.path.dirname(__file__), "model.pt"))
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# MongoDB configuration
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb+srv://projectDB:PEyHwQ2fF7e5saEf@cluster0.43hxo.mongodb.net/")
 DB_NAME = os.getenv("DB_NAME", "ta7t-bety")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "paitents")
@@ -24,7 +23,7 @@ COLLECTION_NAME = os.getenv("COLLECTION_NAME", "paitents")
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 
-# Initialize MongoDB
+
 def init_db():
     try:
         client = pymongo.MongoClient(MONGODB_URI)
@@ -37,7 +36,7 @@ def init_db():
 
 collection = init_db()
 
-# Helper functions
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -83,7 +82,7 @@ def verify_user(collection, email, password):
         print(f"Login failed: {e}")
         return False, None
 
-# Authentication decorator
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -92,7 +91,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Model loading
+
 def load_model(model_path):
     model = models.resnet18(weights=None)
     model.fc = nn.Linear(model.fc.in_features, 4)
@@ -127,14 +126,14 @@ def predict(model, input_tensor):
     probabilities = {CLASS_NAMES[i]: float(probs[i]) for i in range(len(CLASS_NAMES))}
     return predicted_class, probabilities
 
-# Load model
+
 try:
     model = load_model(MODEL_PATH)
 except Exception as e:
     print("Model load error:", e)
     model = None
 
-# Routes
+
 @app.route("/api", methods=["GET"])
 def api_home():
     return jsonify({
@@ -219,7 +218,7 @@ def logout():
 def index():
     return render_template_string(MAIN_TEMPLATE, user=session.get('user'))
 
-# HTML Templates
+
 LOGIN_TEMPLATE = """
 <!DOCTYPE html>
 <html>
